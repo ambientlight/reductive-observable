@@ -1,0 +1,32 @@
+{
+  "name": "reductive-observable",
+  "namespace": false,
+  "version": "0.1.0",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    },  {
+      "dir": "__tests__",
+      "type": "dev"
+    }
+  ],
+  "package-specs": {
+    "module": "commonjs"
+  },
+  "suffix": ".bs.js",
+  "bs-dependencies": [
+    "reductive",
+    "@ambientlight/bs-rx"
+  ],
+  "bs-dev-dependencies": [
+    "@glennsl/bs-jest",
+    "bs-mocha"
+  ],
+  "warnings": {},
+  "refmt": 3,
+  "bsc-flags": [
+    "-bs-g"
+  ],
+  "ppx-flags": []
+}

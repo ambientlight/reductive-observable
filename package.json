@@ -1,0 +1,41 @@
+{
+    "name": "reductive-observable",
+    "version": "0.1.0",
+    "description": "Minimal port of redux-observable to reason reductive",
+    "scripts": {
+        "build": "bsb -make-world",
+        "clean": "bsb -clean-world",
+        "bsb": "bsb -make-world -w",
+        "docs": "bsdoc build -v --debug Rx",
+        "test": "jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ambientlight/reductive-observable.git"
+    },
+    "keywords": [
+        "rxjs",
+        "reason",
+        "reasonml",
+        "bucklescript",
+        "promise",
+        "bindings"
+    ],
+    "author": "ambientlight",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ambientlight/reductive-observable/issues"
+    },
+    "docs": "https://ambientlight.github.io/reductive-observable",
+    "homepage": "https://github.com/ambientlight/reductive-observable#readme",
+    "devDependencies": {
+        "@glennsl/bs-jest": "^0.4.9",
+        "bs-mocha": "^1.0.0",
+        "jest": "^24.9.0",
+        "reason-react": "^0.7.0"
+    },
+    "dependencies": {
+        "@ambientlight/bs-rx": "^0.1.7",
+        "reductive": "^2.0.1"
+    }
+}
