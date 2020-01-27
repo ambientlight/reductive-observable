@@ -12,7 +12,7 @@ Then add `reductive-observable` into `bs-dependencies` in your project `bsconfig
 
 ## Usage
 
-Your side-effect is defined as `epic`. Epic is an observable operator (transformer function) that takes an `Rx.Observable.t(action, state)` tuple and returns an `Rx.Observable.t(action)`, that is an observable that emits actions back to the store. Let's look on the following example:
+Your side-effect is defined as `epic`. Epic is an observable operator (transformer function) that takes an `Rx.Observable.t((action, state))` and returns an `Rx.Observable.t(action)`, that is an observable that emits actions back to the store. Let's look at the following example:
 
 ```reason
 module State {
