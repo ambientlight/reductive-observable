@@ -2,7 +2,7 @@
 Minimal port of [redux-observable](https://github.com/redux-observable/redux-observable) to reason reductive.
 Centalized rx side-effects for reductive.
 
-Additionally this repo provides a higher order store `ObservableStore` that allows observing action-chains to bring a concept of `completion` to reductive.  To have completion in reductive, we would likely need to store the status of the side effect in a substate and then subscribe and observe changes to this substate, sometimes it might feel like an overkill, and we wished `dispatch()` would be able to return a `Promise` or `Observable` back, this is precisely what `ObservableStore.observe()` does, see usage.
+Additionally this repo provides a higher order store `ObservableStore` that allows observing action-chains to bring a concept of `completion` to reductive.  To have completion in reductive, we would likely need to store the status of the side effect in a substate and then subscribe and observe changes to this substate, sometimes it might feel like an overkill, and we wished `dispatch()` would be able to return a `Promise` or `Observable` back, this is precisely what `ObservableStore.observe()` does, see [usage](https://github.com/ambientlight/reductive-observable#usage-observablestore).
 
 ## Installation
 
