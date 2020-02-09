@@ -1,6 +1,6 @@
 {
     "name": "reductive-observable",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Minimal port of redux-observable to reason reductive",
     "scripts": {
         "build": "bsb -make-world",

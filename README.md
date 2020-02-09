@@ -2,6 +2,8 @@
 Minimal port of [redux-observable](https://github.com/redux-observable/redux-observable) to reason reductive.
 Centalized rx side-effects for reductive.
 
+Additionally this repo provides a higher order store `ObservableStore` that allows observing action-chains to bring a concept of `completion` to reductive.  To have completion in reductive, we would likely need to store the status of the side effect in a substate and then subscribe and observe changes to this substate, sometimes it might feel like an overkill, and we wished `dispatch()` would be able to return a `Promise` or `Observable` back, this is precisely what `ObservableStore.observe()` does, see usage.
+
 ## Installation
 
 ```
@@ -10,7 +12,7 @@ npm install reductive-observable
 
 Then add `reductive-observable` into `bs-dependencies` in your project `bsconfig.json`
 
-## Usage
+## Usage: ReductiveObservable.middleware
 
 Your side-effect is defined as `epic`. Epic is an observable operator (transformer function) that takes an `Rx.Observable.t((action, state))` and returns an `Rx.Observable.t(action)`, that is an observable that emits actions back to the store. Let's look at the following example:
 
@@ -59,13 +61,7 @@ module Epics {
   /**
     use empty operator when side effect does not need to emit actions back to the store
    */
-  let logState = (ro: Rx.Observable.t((Action.t, State.t))) => 
-    ro
-    |> Rx.Operators.tap(~next=((_action, state)) => Js.log(state))
-    |> ReductiveObservable.Utils.empty;
-      
-  let root = (ro: Rx.Observable.t((Action.t, State.t))) =>
-    Rx.merge([|
+To have completion in reductive, we would likely need to store the status of the side effect in a substate and then subscribe and observe changes to this substate, sometimes it might feel like an overkill, and we wished `dispatch()` would be able to return a `Promise` or `Observable` back.      Rx.merge([|
       ro |> startIncrementing,
       ro |> startDecrementing,
       ro |> logState
@@ -84,6 +80,103 @@ let store = Reductive.Store.create(
   ()
 );
 ```
+
+## Usage: ObservableStore
+
+When you need to observe the status or completion of your side effects on the dispatching side, wrap your store into `ObservableStore`, where instead of using `dispatch(yourAction)`, `observe(yourAction)` can be used to return an observable that will emit actions belonging to the same logical action chain.
+
+```reason
+// let store = Reductive.Store.create(...)
+
+let obsStore = ObservableStore.create(
+  store,
+  ~enhancer=ReductiveObservable.middleware(Rx.of1(Epics.progress)),
+  ()
+)
+
+// obsStore |. Reductive.Store.dispatch(StartLongEffect)
+
+obsStore
+|. ObservableStore.observe(StartLongEffect)
+|> Rx.Operators.tap(~next=progress => Js.log(progress))
+|> Rx.Operators.reduce((progress, action, idx) => switch(action){
+  | Action.Update(status) => status
+  | Action.EndLongEffect => progress == 100 ? 100 : -1
+  | _ => progress
+}, 0)
+```
+
+where the Epics and Action is defined as:
+
+```reason
+module Action {
+  type t = 
+    | StartLongEffect
+    | Update(int)
+    | EndLongEffect
+};
+
+module Epics {
+  let progress = ro => ReductiveObservable.Utils.({
+    ro
+    |> optmap(fun 
+      | (ObservableStore.Start(Action.StartLongEffect, subject), _store) => Some(subject) 
+      | _ => None)
+    |> Rx.Operators.mergeMap(`Observable((subject, _idx) =>
+      Rx.concat([|
+        Rx.range(~count=100, ())
+        |> Rx.Operators.map((value, _idx) => value + 1)
+        |> Rx.Operators.map((value, _idx) => ObservableStore.Update(Action.Update(value), subject)),
+        Rx.of1(ObservableStore.End(Action.EndLongEffect, subject))
+      |])
+    ))
+  });
+}
+```
+
+The epics you define take `Rx.Observable.t((observableAction('action), 'state))` and return `Rx.Observable.t(observableAction('action))` where observableAction is defined as:
+
+```reason
+type observableAction('action) =
+  | Start('action, Rx.ReplaySubject.t('action))
+  | Update('action, Rx.ReplaySubject.t('action))
+  | Error('action, Rx.ReplaySubject.t('action))
+  | End('action, Rx.ReplaySubject.t('action));
+```
+
+`observableAction` wraps the actions you dispatch into a `status` variant:
+ * `Update()` will progagate your action, use it for actions that represent intermediate partial updates
+ * `End()` will propagate the action and complete your observable.
+ * `Error()` will error your obsevable with an action you pass (which you might probably want to handle with `Rx.Operators.catchError()`)
+
+As you've also noticed, subject you extract from `Start()` action is passed along. You normally should not need to send actions directly into it. 
+
+### Action Chain
+
+Sequence of actions that will be dispatched to a store that belong to the same side-effect you are modeling, for example:
+
+```reason
+let signOut = (reductiveObservable: Rx.Observable.t(('action, 'state))) => Rx.Operators.({
+  reductiveObservable
+  |> Utils.Rx.optMap(fun | (`SignOutRequest(()), _state) => Some(()) | _ => None)
+  |> mergeMap(`Observable((_, _idx) => 
+    Rx.merge([|
+      Rx.of1(`SignOutStarted(())),
+      Rx.from(`Promise(Amplify.Auth.signOut(())), ())
+      |> map((_result, _idx) => `SignOutCompleted(()))
+      |> catchError((error, _notif) => Rx.of1(`SignOutError(error|.composeError)))
+    |])
+  ))
+})
+```
+
+This epic models sign-out with a following action chain dispatched to the store: `SignOutRequest` -> `SignOutStarted` -> `SignOutError/SignOutCompleted`.
+
+### Additional notes
+
+* You can still use your original `store` as you normally do.
+* You can also use all reductive APIs on `ObservableStore.t` instances, replace `Reductive.Store.` with `ObservableStore.`
+* Use `observe()` with actions you handle in the epics passed to `ObservableStore.create`, if you call `observe()` with actions that are not handled in your epics, the observable will never complete, if you need a saveguard against those cases, use `Rx.Operators.timeout`
 
 ## Hot Reload of epics
 
