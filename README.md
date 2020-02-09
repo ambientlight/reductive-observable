@@ -145,7 +145,7 @@ type observableAction('action) =
 ```
 
 `observableAction` wraps the actions you dispatch into a `status` variant:
- * `Update()` will progagate your action, use it for actions that represent intermediate partial updates
+ * `Update()` will progagate your action, use it for actions that represent intermediate updates
  * `End()` will propagate the action and complete your observable.
  * `Error()` will error your obsevable with an action you pass (which you might probably want to handle with `Rx.Operators.catchError()`)
 
