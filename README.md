@@ -104,7 +104,7 @@ obsStore
   | Action.EndLongEffect => progress == 100 ? 100 : -1
   | _ => progress
 }, 0)
-|> Rx.Observable.subscribe(~next=progress => Js.log(progress == 100 ? "done" : "error"))
+|> Rx.Observable.subscribe(~next=progress => Js.log(progress == 100 ? "done" : "something wrong"))
 ```
 
 where the Epics and Action is defined as:
