@@ -62,8 +62,8 @@ let nativeDispatch = (store: t('action, 'state), action) =>
 
 let dispatch = (store: t('action, 'state), action) =>
   store
-  |. Reductive.Store.getState
-  |. Reductive.Store.dispatch(action);
+  |. observe(action)
+  |> ignore;
 
 let getState = (store: t('action, 'state)) => 
   store 
