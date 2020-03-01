@@ -1,7 +1,7 @@
 {
   "name": "reductive-observable",
   "namespace": false,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "sources": [
     {
       "dir": "src",
@@ -20,6 +20,8 @@
     "@ambientlight/bs-rx"
   ],
   "bs-dev-dependencies": [
+    "reason-promise",
+    "bs-fetch",
     "@glennsl/bs-jest",
     "bs-mocha"
   ],
