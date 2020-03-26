@@ -6,6 +6,8 @@ Additionally this repo provides a higher order store `ObservableStore` that allo
 
 ## Installation
 
+First make sure you have `bs-rx` installed. See installation guidelines in [bs-rx documentation](https://github.com/ambientlight/bs-rx).
+
 ```
 npm install reductive-observable
 ```
