@@ -6,13 +6,13 @@ Additionally this repo provides a higher order store `ObservableStore` that allo
 
 ## Installation
 
-First make sure you have `bs-rx` installed. See installation guidelines in [bs-rx documentation](https://github.com/ambientlight/bs-rx).
+In addition to installing `reductive-observable` make sure you have `@ambientlight/bs-rx`, `reason-promise`, `bs-fetch`, `reductive` installed (peer dependencies)
 
 ```
-npm install reductive-observable
+npm install reductive-observable @ambientlight/bs-rx reason-promise bs-fetch reductive
 ```
 
-Then add `reductive-observable` into `bs-dependencies` in your project `bsconfig.json`
+Then add `reductive-observable`, `@ambientlight/bs-rx`, `reason-promise`, `bs-fetch`, `reductive` into `bs-dependencies` in your project `bsconfig.json`.
 
 ## Usage: ReductiveObservable.middleware
 
@@ -63,7 +63,13 @@ module Epics {
   /**
     use empty operator when side effect does not need to emit actions back to the store
    */
-To have completion in reductive, we would likely need to store the status of the side effect in a substate and then subscribe and observe changes to this substate, sometimes it might feel like an overkill, and we wished `dispatch()` would be able to return a `Promise` or `Observable` back.      Rx.merge([|
+  let logState = (ro: Rx.Observable.t((Action.t, State.t))) => 
+    ro
+    |> Rx.Operators.tap(~next=((_action, state)) => Js.log(state))
+    |> ReductiveObservable.Utils.empty;
+
+  let root = (ro: Rx.Observable.t((Action.t, State.t))) =>
+    Rx.merge([|
       ro |> startIncrementing,
       ro |> startDecrementing,
       ro |> logState

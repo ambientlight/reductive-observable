@@ -1,6 +1,6 @@
 {
     "name": "reductive-observable",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Minimal port of redux-observable to reason reductive",
     "scripts": {
         "build": "bsb -make-world",
@@ -34,10 +34,12 @@
         "bs-mocha": "^1.0.0",
         "jest": "^24.9.0",
         "reason-promise": "^1.0.2",
-        "reason-react": "^0.7.0"
+        "reason-react": "^0.7.0",
+        "@ambientlight/bs-rx": "^0.2.3",
+        "reductive": "^2.0.1"
     },
-    "dependencies": {
-        "@ambientlight/bs-rx": "^0.2.2",
+    "peerDependencies": {
+        "@ambientlight/bs-rx": "^0.2.3",
         "reductive": "^2.0.1"
     }
 }
