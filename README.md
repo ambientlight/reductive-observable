@@ -161,6 +161,141 @@ type observableAction('action) =
 
 As you've also noticed, subject you extract from `Start()` action is passed along. You normally should not need to send actions directly into it. 
 
+## Example with React
+Fetches a list of users in epics, and uses `observableStore.observe` to bind `isFetching` to button disabled state.
+
+```reason
+type usersResp = array(Js.t({
+  .
+  id: int,
+  name: string,
+  username: string,
+  email: string
+}));
+
+module State {
+  type t = {
+    users: usersResp
+  };
+};
+
+module Action {
+  type t = 
+    | FetchUsers
+    | DidStartFetchingUsers
+    | SetUsers(usersResp)
+    | DidFetchUsers
+};
+
+module Epics {
+  let fetchArticles = ro => ReductiveObservable.Utils.({
+    ro
+    |> optmap(fun 
+      // pass the subject along
+      | (ObservableStore.Start(Action.FetchUsers, subject), _store) => Some(subject) 
+      | _ => None)
+    |> Rx.Operators.mergeMapn(`Observable(subject => 
+      Rx.concat([|
+        Rx.of1(ObservableStore.Update(Action.DidStartFetchingUsers, subject)),
+        Rx.Fetch.fromFetch(`String("https://jsonplaceholder.typicode.com/users/"), ())
+        // dummy delay to demonstrate disabled button
+        |> Rx.Operators.delay(`Int(1000))
+        |> Rx.Operators.mergeMapn(`Promise(response => response |> Fetch.Response.json))
+        |> Rx.Operators.mergeMapn(`Observable((users: Js.Json.t) => 
+          Rx.concat([|
+            Rx.of1(ObservableStore.Update(Action.SetUsers(users |> Obj.magic), subject)),
+            Rx.of1(ObservableStore.End(Action.DidFetchUsers, subject))
+          |])
+        ))
+      |]) 
+    ))
+  })
+}
+
+module Store {
+  let reducer = (state: State.t, action: Action.t): State.t => 
+    switch(action){
+    | SetUsers(users) => { users: users }
+    | _ => state
+    };
+
+  let store = Reductive.Store.create(
+    ~reducer,
+    ~preloadedState={ users: {[||]} },
+    ()
+  );
+
+  let obsStore = ObservableStore.create(
+    store,
+    ~enhancer=ReductiveObservable.middleware(Rx.of1(Epics.fetchArticles)),
+    ()
+  )
+}
+
+module AppStore = ReductiveContext.Make({
+  type action = Action.t;
+  type state = State.t;
+});
+
+let usersSelector = (state: State.t) => state.users;
+
+let useDeattachObservable = () => {
+  let subject = React.useMemo(() => Rx.Subject.create());
+  React.useEffect0(() => 
+    Some(() => {
+      subject |> Rx.Subject.next(());
+      subject |> Rx.Subject.complete 
+  }));
+  subject
+};
+
+module Root = {
+  [@react.component]
+  let make = () => {
+    let users = AppStore.useSelector(usersSelector);
+    let (fetching, setFetching) = React.useState(() => false);
+    let didDeattach = useDeattachObservable() |> Rx.Subject.asObservable;
+
+    <>
+      <div>
+        (Array.length(users) > 0 
+          ? users 
+            |> Array.map(elem => 
+              <div key=string_of_int(elem##id)>
+                (ReasonReact.string(string_of_int(elem##id) ++ ": " ++ elem##name))
+              </div>) 
+            |> ReasonReact.array 
+          : ReasonReact.string("No articles loaded"))
+      </div>
+      <button disabled=fetching onClick=(_event =>
+        Store.obsStore
+        |. ObservableStore.observe(Action.FetchUsers)
+        // complete the observable when component unmounts
+        |> Rx.Operators.takeUntil(didDeattach)
+        // maps action chain to button disabled state
+        // the button will get disabled as DidStartFetchingUsers will map to true
+        |> Rx.Operators.mapn(fun | Action.DidFetchUsers => false | _ => true )
+        |> Rx.Observable.subscribe(~next=value => setFetching(_ => value))
+        |> ignore
+        )>
+
+        (ReasonReact.string(fetching ? "fetching..." : "fetch"))
+      </button>
+    </>
+  };
+};
+
+module App {
+  [@react.component]
+  let make = () =>
+    <AppStore.Provider store=Store.store>
+      <Root/>
+    </AppStore.Provider>
+}
+
+ReactDOMRe.renderToElementWithId(<App/>, "root");
+```
+
 ### Action Chain
 
 Sequence of actions that will be dispatched to a store that belong to the same side-effect you are modeling, for example:
