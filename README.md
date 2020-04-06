@@ -188,7 +188,7 @@ module Action {
 };
 
 module Epics {
-  let fetchArticles = ro => ReductiveObservable.Utils.({
+  let fetchUsers = ro => ReductiveObservable.Utils.({
     ro
     |> optmap(fun 
       // pass the subject along
@@ -227,7 +227,7 @@ module Store {
 
   let obsStore = ObservableStore.create(
     store,
-    ~enhancer=ReductiveObservable.middleware(Rx.of1(Epics.fetchArticles)),
+    ~enhancer=ReductiveObservable.middleware(Rx.of1(Epics.fetchUsers)),
     ()
   )
 }
